@@ -62,36 +62,39 @@ impl Node {
         }
     }
 
-    fn get(&mut self, key:String) -> Result<&Box<Any>, io::Error> {
+    fn get(&mut self, key:String) -> Option<&Box<Any>> {
         let mut node = self;
 
         for (i, c) in key.chars().enumerate() {
+            if node.children.len() == 0 {
+                return None
+            }
             if i == key.chars().count() - 1 && node.children.len() == 0 {
                 if !node.is_set {
-                    return Err(std::io::Error::new(std::io::ErrorKind::NotFound, "No such key"))
+                    return None
                 }
                 if c == node.label {
-                    return Ok(&node.value);
+                    return Some(&node.value);
                 }
-                return Err(std::io::Error::new(std::io::ErrorKind::NotFound, "No such key"))
+                return None
             }
             for (child_num, child) in node.children.iter().enumerate() {
                 if c == child.label {
                     if i == key.chars().count() - 1 {
                         if !node.children[child_num].is_set {
-                            return Err(std::io::Error::new(std::io::ErrorKind::NotFound, "No such key"))
+                            return None
                         }
-                        return Ok(&mut node.children[child_num].value);
+                        return Some(&mut node.children[child_num].value);
                     }
                     node = &mut node.children[child_num];
                     break;
                 }
                 if child_num == node.children.len() - 1 {
-                    return Err(std::io::Error::new(std::io::ErrorKind::NotFound, "No such key"))
+                    return None
                 }
             }
         }
-        return Err(std::io::Error::new(std::io::ErrorKind::NotFound, "No such key"))
+        return None
     }
 }
 
@@ -105,7 +108,7 @@ fn main() {
     node.set("one_more_key".to_string(), Box::new("value 5".to_string()));
 
     match node.get("second".to_string()) {
-        Ok(val) => {
+        Some(val) => {
             match val.downcast_ref::<String>() {
                 Some(as_string) => {
                     println!("{}", as_string);
@@ -115,6 +118,6 @@ fn main() {
                 }
             }
         },
-        Err(err) => println!("{}", err)
+        _ => println!("Empty")
     }
 }
